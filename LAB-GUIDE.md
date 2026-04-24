@@ -402,9 +402,8 @@ Think of it like this: The visual is trying to show "everything" - including a r
 
 **Why does the blank row show "Low Sales" and "Poor"?**
 
-- For the blank row, there's **no specific product** in the filter context
-- `SELECTEDVALUE(Products[ProductName])` returns BLANK()
-- Without our protective check, the IF measures still execute:
+- For the blank row, there's **no specific product** in the filter context and therefore it returns BLANK()
+- Without a protective check, the IF measures will execute:
   - They evaluate `[Total Sales]` in this blank context
   - Return classification values like "Low Sales" or "Poor"
 - This creates a confusing blank row with unexpected values
@@ -481,22 +480,6 @@ We're introducing variables here using `VAR`. Variables:
 
 **After updating the measures, check your table visual again** - the blank row should now show empty values for these text measures!
 
-**Alternative solutions if you still see the blank row:**
-
-**Option 1 - Filter the Visual:**
-1. Select your table visual
-2. In the **Filters** pane (View → Filters if not visible)
-3. Drag **ProductName** to the **Filters on this visual** area
-4. Under "Filter type", select **Basic filtering**
-5. Uncheck **(Blank)** to remove blank rows
-
-**Option 2 - Hide the _Measures Table (Best Practice):**
-1. Go to Data view
-2. Right-click the **_Measures** table
-3. Select **Hide in report view**
-
-This prevents users from accidentally using the table itself while still allowing them to use all the measures stored in it.
-
 **Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
 
 ---
@@ -507,7 +490,7 @@ The SWITCH function is cleaner and more readable than nested IF statements, espe
 
 ### Step 7.1: Performance Rating with SWITCH
 
-Now let's rewrite the Performance Rating using SWITCH, which is much cleaner. Make sure to include the same blank-checking logic we learned in Step 6.5.
+Now let's rewrite the Performance Rating using SWITCH, which is much cleaner. Make sure to include the same blank-checking logic we learned in Step 6.5. Add following measure to your **Measures** table:
 
 ```dax
 Performance Rating (SWITCH) = 
@@ -585,13 +568,19 @@ Let's create a measure that shows total sales across ALL customers, regardless o
 
 ```dax
 Total Sales All Customers = 
-CALCULATE(
-    [Total Sales],
-    ALL(Customers)
+VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
+RETURN
+IF(
+    NOT(ISBLANK(SelectedCustomer)),
+    CALCULATE(
+        [Total Sales],
+        ALL(Customers)
+    )
 )
 ```
 
 **What it does:**
+- Checks if we have a specific customer selected (using the pattern from Part 6)
 - Takes the [Total Sales] measure
 - Removes any filters on the Customers table
 - Calculates total sales as if no customer filter exists
@@ -602,9 +591,14 @@ This version ignores ALL filters in the entire report:
 
 ```dax
 Total Sales All Filters = 
-CALCULATE(
-    [Total Sales],
-    ALL(Sales)
+VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
+RETURN
+IF(
+    NOT(ISBLANK(SelectedCustomer)),
+    CALCULATE(
+        [Total Sales],
+        ALL(Sales)
+    )
 )
 ```
 
@@ -614,21 +608,27 @@ Now we can use these to calculate each customer's percentage of total sales:
 
 ```dax
 % of Total Sales = 
-DIVIDE(
-    [Total Sales],
-    [Total Sales All Customers],
-    0
+VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
+RETURN
+IF(
+    NOT(ISBLANK(SelectedCustomer)),
+    DIVIDE(
+        [Total Sales],
+        [Total Sales All Customers],
+        0
+    )
 )
 ```
 
 **How it works:**
+- Checks if we have a specific customer selected
 - Divides the filtered Total Sales (e.g., for one customer)
 - By the Total Sales across all customers
 - The third parameter (0) handles division by zero
 - Format this measure as a percentage!
 
 **To format as percentage:**
-1. Select the measure in the Data view
+1. Select the measure in the Data pane
 2. Go to **Measure tools** > **Format**
 3. Select **Percentage**
 4. Set decimal places to 1 or 2
