@@ -380,6 +380,31 @@ Before moving on to SWITCH, let's verify that your IF measures work correctly.
 - Products with Total Sales < 500 are marked as "Low Sales"
 - The Performance Rating uses 5 different thresholds to categorize each product
 
+**❓ Why is there a blank row in the Total?**
+
+You may notice that the **Total** row shows a blank value for your text-based measures (Sales Category and Performance Rating), while your numeric measures show totals correctly.
+
+**This is normal behavior!** Here's why:
+
+- **Numeric measures** (like Total Sales, Average Sales) aggregate across all rows—they SUM, AVERAGE, etc.
+- **Text measures** (like Sales Category, Performance Rating) return different text values for different rows
+- At the Total level, Power BI evaluates the measure **across all products combined** (Total Sales = 39,933.38 in your case)
+- Since this total value meets the "Excellent" threshold (≥ 2000), the measure actually returns "Excellent"—but Power BI's default behavior is to show **(Blank)** in the Total row for text measures unless you explicitly configure it
+
+**This is actually correct!** The blank indicates that these measures are row-level classifications, not overall aggregations. Each product has its own category/rating based on its individual sales.
+
+**Optional - Fix the blank (Advanced):**
+If you want to show a value in the Total row, you could modify your measure like this:
+```dax
+Sales Category (with Total) = 
+IF(
+    HASONEVALUE(Products[ProductName]),
+    IF([Total Sales] >= 500, "High Sales", "Low Sales"),
+    "Multiple Products"
+)
+```
+The `HASONEVALUE()` function checks if you're looking at a single product row (returns the category) or the total row (returns "Multiple Products"). However, for learning purposes, we'll keep the simpler version.
+
 **Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
 
 ---
