@@ -385,37 +385,37 @@ You've probably noticed an unexpected **blank row** at the top of your table tha
 
 **What causes the blank row?**
 
-Remember when you created the **_Measures** table? Let's trace what happened:
+The blank row appears because of how **table visuals display data** when you mix dimension attributes with measures. Here's what's happening:
 
-1. You created the table with `_Measures = {1}` → This created a table with **1 row** and **1 column** (named "Value" containing the number 1)
-2. You deleted the "Value" column → The column is gone, BUT **the table itself still exists with 1 row**
-3. Think of it like this: The _Measures table is like an empty box that still has one slot (row) in it, even though there's nothing visible inside
+When you add **ProductName** (a column from the Products table) to a table visual:
+- Power BI creates one row for each distinct ProductName value
+- It also creates rows for any **"missing" or unmatched data**
 
-**Why is this a problem in your visual?**
+**Why would there be unmatched data?**
 
-When you add ProductName to a table visual alongside measures from the _Measures table, Power BI tries to combine and display data from both tables:
+This typically happens when:
+1. **Power BI includes a row for calculations that don't tie to a specific product**
+2. The table visual automatically tries to show aggregations at multiple levels
+3. Your measures evaluate even when there's no specific ProductName in context
 
-- **Products table rows**: 5 products (4K Monitor, Keyboard, Laptop Pro 15, USB Cable, Wireless Mouse)
-- **_Measures table row**: 1 empty row (with no ProductName value → appears as blank)
-
-This creates a **blank row** in your table because the _Measures table contributes one row that has no ProductName associated with it.
+Think of it like this: The visual is trying to show "everything" - including a row that represents "no specific product" or an aggregation level.
 
 **Why does the blank row show "Low Sales" and "Poor"?**
 
-- For the blank row, there's no specific product in the filter context
-- [Total Sales] calculates across **all products combined** (grand total = 39,933.38)
-- Your IF measures still execute:
-  - `Sales Category (Simple)`: 39,933.38 ≥ 500? → Yes → Returns "High Sales"
-  - Wait, you're seeing "Low Sales"? That's because the measure evaluates in an unexpected way
-- Regardless, the blank row shows values it shouldn't, creating confusion
+- For the blank row, there's **no specific product** in the filter context
+- `SELECTEDVALUE(Products[ProductName])` returns BLANK()
+- Without our protective check, the IF measures still execute:
+  - They evaluate `[Total Sales]` in this blank context
+  - Return classification values like "Low Sales" or "Poor"
+- This creates a confusing blank row with unexpected values
 
 **The root cause:**
 
-The _Measures table is a **real table in your data model** with **one physical row**, even though it has no visible columns. This row causes the blank row issue in your visuals.
+Table visuals in Power BI can create rows for contexts where your dimension attribute (ProductName) has no value, but your measures still evaluate and return results. This is by design - Power BI wants to show all data perspectives.
 
 **How do we fix this?**
 
-We need to modify our measures to only return values when there's an **actual product** in the filter context. We'll use `SELECTEDVALUE()` to check if there's a real ProductName value, and return BLANK() if not.
+We need to modify our measures to only return values when there's an **actual product** in the filter context. We'll use `SELECTEDVALUE()` to check if there's a real ProductName value, and return BLANK() if not. This way, the blank row will show nothing for these measures.
 
 ---
 
