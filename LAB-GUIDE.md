@@ -362,6 +362,26 @@ IF(
 - Returns the first matching category
 - Nested IF statements can get hard to read (we'll improve this with SWITCH!)
 
+### Step 6.3: Test Your IF Measures in a Visual
+
+Before moving on to SWITCH, let's verify that your IF measures work correctly.
+
+1. Go back to the **table visual** you created in Step 5.8
+2. Add these two new measures to your table:
+   - **Sales Category (Simple)**
+   - **Performance Rating (IF)**
+
+**What you should see:**
+- Each product now has a sales category (either "High Sales" or "Low Sales")
+- Each product has a performance rating (Excellent, Good, Average, Below Average, or Poor)
+
+**Understanding the results:**
+- Products with Total Sales ≥ 500 are marked as "High Sales"
+- Products with Total Sales < 500 are marked as "Low Sales"
+- The Performance Rating uses 5 different thresholds to categorize each product
+
+**Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
+
 ---
 
 ## Part 7: SWITCH Function - Better Readability
