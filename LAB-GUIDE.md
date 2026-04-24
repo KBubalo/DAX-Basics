@@ -161,8 +161,9 @@ Now when you use MonthName in visuals, it will be sorted correctly!
 1. Select the **Calendar** table
 2. Go to **Table tools** > **Mark as date table**
 3. Select **Mark as date table**
-4. In the dialog, choose **Date** as the date column
-5. Click OK
+4. In the dialog, toggle **Mark as a date table** to on
+5. In the dropdown, choose **Date** as the date column
+6. Click Save
 
 This tells Power BI that this is your official calendar table, enabling time intelligence functions.
 
@@ -202,7 +203,7 @@ Click the **Model view** icon on the left sidebar.
 3. Verify the relationship is **One-to-Many** (1:*)
 4. Click OK
 
-Your data model is now complete! You should see a **star schema** with Sales (fact table) at the center, connected to three dimension tables.
+Your data model is now complete! You should see a **star schema** with Sales (fact table) at the center, connected to three dimension tables. You can now switch back to the **Report view**.
 
 ---
 
@@ -217,7 +218,8 @@ While you can add measures to any table, it's best practice to create a dedicate
 1. Go to **Modeling** > **New Table**
 2. Enter: `_Measures = {1}`
 3. This creates a single-row table solely for storing measures
-4. Hide the "Value" column (right-click > Hide)
+
+Now let's add our first measure to this dedicated table so that all measures are organized in one place. Select the `_Measures` table in the Data pane, then go to **Modeling** > **New measure** to create a measure that will be stored in this table. Repeat this step for all the below measures.
 
 ### Step 5.2: Total Sales (SUM)
 
@@ -264,6 +266,45 @@ Transaction Count = COUNTROWS(Sales)
 ```
 
 **What it does:** Counts how many rows (transactions) are in the Sales table within the current filter context.
+
+Now, you can delete the **Value** column in our **_Measures** table since it was only needed to create the table and is no longer required.
+
+### Step 5.8: Visualize Your Measures
+
+Let's test the measures you just created by building a simple table visual. This helps you verify that your DAX is working correctly and see how measures respond to different filter contexts.
+
+1. Go to the **Report view** (click the report icon on the left sidebar)
+2. Click on the **Table** visual in the Visualizations pane
+3. In the **Data** pane, expand the **Products** table
+4. Check the box next to **ProductName** (or drag it to the **Columns** field)
+5. Now expand your **_Measures** table (or wherever you created your measures)
+6. Add the following measures to your table:
+   - **Total Sales**
+   - **Average Sales**
+   - **Total Quantity**
+   - **Transaction Count**
+
+**What you should see:**
+- Each product name in its own row
+- Total sales aggregated by product
+- Average sales per transaction for each product
+- Total quantity sold per product
+- Number of transactions per product
+
+**Try this experiment:**
+1. Create a **slicer** visual
+2. Add **Customers[Country]** to the slicer
+3. Select a country (e.g., "Germany")
+4. Watch how all the measures in your table recalculate automatically!
+
+This demonstrates **filter context** in action—your measures respond dynamically to filters applied in the report.
+
+**Optional:** Create a second table visual showing:
+- **Customers[Country]**
+- **Total Sales**
+- **Transaction Count**
+
+This shows sales performance by country instead of by product.
 
 ---
 
