@@ -591,14 +591,9 @@ This version ignores ALL filters in the entire report:
 
 ```dax
 Total Sales All Filters = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    CALCULATE(
-        [Total Sales],
-        ALL(Sales)
-    )
+CALCULATE(
+    [Total Sales],
+    ALL(Sales)
 )
 ```
 
@@ -608,15 +603,10 @@ Now we can use these to calculate each customer's percentage of total sales:
 
 ```dax
 % of Total Sales = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    DIVIDE(
-        [Total Sales],
-        [Total Sales All Customers],
-        0
-    )
+DIVIDE(
+    [Total Sales],
+    [Total Sales All Customers],
+    0
 )
 ```
 
@@ -769,19 +759,6 @@ Now let's use your measures to create insights:
 
 ---
 
-## Challenge Questions (Optional)
-
-Try to answer these questions using your report:
-
-1. Which country generated the highest sales?
-2. What percentage of total sales came from Europe?
-3. Which product has the highest average transaction value?
-4. How many unique customers made purchases?
-5. What is the month-over-month sales trend?
-6. Which quarter had the best performance rating?
-
----
-
 ## Summary
 
 Congratulations! You've completed the DAX Basics lab. You now understand:
@@ -793,7 +770,3 @@ Congratulations! You've completed the DAX Basics lab. You now understand:
 - Time intelligence basics
 
 These fundamentals form the foundation for more advanced DAX development. Keep practicing, and remember: understanding context (row context vs filter context) is the key to mastering DAX!
-
----
-
-**Questions?** Reach out to your instructor or refer to the lecture slides for conceptual explanations.

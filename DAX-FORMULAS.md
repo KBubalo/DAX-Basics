@@ -204,29 +204,19 @@ IF(
 ### Total Sales Ignoring All Filters
 ```dax
 Total Sales All Filters = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    CALCULATE(
-        [Total Sales],
-        ALL(Sales)
-    )
+CALCULATE(
+    [Total Sales],
+    ALL(Sales)
 )
 ```
 
 ### Percentage of Total
 ```dax
 % of Total Sales = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    DIVIDE(
-        [Total Sales],
-        [Total Sales All Customers],
-        0
-    )
+DIVIDE(
+    [Total Sales],
+    [Total Sales All Customers],
+    0
 )
 ```
 
