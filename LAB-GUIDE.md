@@ -281,6 +281,8 @@ Let's test the measures you just created by building a simple table visual. This
 6. Add the following measures to your table:
    - **Total Sales**
    - **Average Sales**
+   - **Min Sale**
+   - **Max Sale**
    - **Total Quantity**
    - **Transaction Count**
 
@@ -288,6 +290,8 @@ Let's test the measures you just created by building a simple table visual. This
 - Each product name in its own row
 - Total sales aggregated by product
 - Average sales per transaction for each product
+- Minimum sale amount per product
+- Maximum sale amount per product
 - Total quantity sold per product
 - Number of transactions per product
 
@@ -312,7 +316,7 @@ This shows sales performance by country instead of by product.
 
 ### Step 6.1: Simple IF Statement - Sales Category
 
-Let's create a measure that categorizes sales as "High" or "Low":
+Let's create a measure that categorizes sales as "High" or "Low". Make sure to select your **_Measure** table before creating this new measure so that it is stored in the same dedicated location as your other measures.
 
 ```dax
 Sales Category (Simple) = 
@@ -385,6 +389,44 @@ SWITCH(
 - Much cleaner and easier to maintain than nested IFs!
 
 **Compare:** Look at both measures side by side. They produce identical results, but SWITCH is far more readable.
+
+### Step 7.2: Visualize and Compare Your Conditional Measures
+
+Let's test your IF and SWITCH measures to verify they work correctly and produce identical results.
+
+**Option A: Add to Your Existing Table**
+
+1. Go back to the **table visual** you created in Step 5.8 (showing ProductName and various measures)
+2. Add these new measures to your table:
+   - **Sales Category (Simple)**
+   - **Performance Rating (IF)**
+   - **Performance Rating (SWITCH)**
+
+**What you should see:**
+- Products are categorized as "High Sales" or "Low Sales"
+- Each product gets a performance rating (Excellent, Good, Average, Below Average, or Poor)
+- The two Performance Rating measures show **identical values**—proving SWITCH and nested IF produce the same results!
+
+**Option B: Create a New Comparison Table**
+
+1. Create a new **Table** visual
+2. Add **Customers[Country]** to the Columns
+3. Add these measures:
+   - **Total Sales**
+   - **Sales Category (Simple)**
+   - **Performance Rating (SWITCH)**
+
+This shows how different countries are rated based on their total sales performance.
+
+**Understanding the Results:**
+
+- Countries with sales ≥ 2000: **Excellent**
+- Countries with sales ≥ 1000: **Good**
+- Countries with sales ≥ 500: **Average**
+- Countries with sales ≥ 100: **Below Average**
+- Countries with sales < 100: **Poor**
+
+**Pro Tip:** You can now **delete** the "Performance Rating (IF)" measure from your model since the SWITCH version is cleaner and easier to maintain. Keep only the SWITCH version for your report.
 
 ---
 
