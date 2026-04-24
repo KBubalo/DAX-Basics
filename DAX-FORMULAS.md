@@ -90,8 +90,10 @@ Transaction Count = COUNTROWS(Sales)
 ### Simple IF
 ```dax
 Sales Category (Simple) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     IF(
         [Total Sales] >= 500,
         "High Sales",
@@ -103,8 +105,10 @@ IF(
 ### Complex Nested IF (5 Conditions)
 ```dax
 Performance Rating (IF) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     IF(
         [Total Sales] >= 2000,
         "Excellent",
@@ -132,8 +136,10 @@ IF(
 ### Performance Rating with SWITCH
 ```dax
 Performance Rating (SWITCH) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     SWITCH(
         TRUE(),
         [Total Sales] >= 2000, "Excellent",

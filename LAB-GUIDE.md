@@ -320,8 +320,10 @@ Let's create a measure that categorizes sales as "High" or "Low". Make sure to s
 
 ```dax
 Sales Category (Simple) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     IF(
         [Total Sales] >= 500,
         "High Sales",
@@ -331,11 +333,15 @@ IF(
 ```
 
 **How it works:**
-- `HASONEVALUE()` checks if there's exactly one product in the current filter context
-- If TRUE (we're looking at a specific product), evaluate the sales category
-- If FALSE (no specific product or multiple products), return BLANK()
+- `VAR` creates a variable to store the selected product name (makes the code cleaner and more efficient)
+- `SELECTEDVALUE()` gets the product name if there's exactly one in the filter context, otherwise returns BLANK()
+- `NOT(ISBLANK(...))` checks if we actually have a product (not a blank row)
+- If TRUE (we have a specific product), evaluate the sales category
+- If FALSE (blank row from _Measures table), return BLANK()
 - Then evaluates if Total Sales is 500 or more
 - Returns "High Sales" if TRUE, "Low Sales" if FALSE
+
+**New concept - VAR:** We're introducing variables here using `VAR`. Variables store intermediate calculations and make your DAX more readable and performant. The pattern is: `VAR VariableName = Expression` followed by `RETURN` for the final result.
 
 ### Step 6.2: Complex IF Statement - Performance Rating
 
@@ -343,8 +349,10 @@ Now let's create a more detailed categorization with 5 levels:
 
 ```dax
 Performance Rating (IF) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     IF(
         [Total Sales] >= 2000,
         "Excellent",
@@ -366,10 +374,11 @@ IF(
 ```
 
 **How it works:**
-- First checks if there's a specific product in context using `HASONEVALUE()`
+- Uses `SELECTEDVALUE()` to get the product name and stores it in a variable
+- `NOT(ISBLANK(...))` checks if we have an actual product value (not blank)
 - If yes, checks conditions from highest to lowest
 - Returns the first matching category
-- If no specific product (like the blank row from _Measures table), returns BLANK()
+- If no product (blank row from _Measures table), returns BLANK()
 - Nested IF statements can get hard to read (we'll improve this with SWITCH!)
 
 ### Step 6.3: Test Your IF Measures in a Visual
@@ -390,31 +399,39 @@ Before moving on to SWITCH, let's verify that your IF measures work correctly.
 - Products with Total Sales < 500 are marked as "Low Sales"
 - The Performance Rating uses 5 different thresholds to categorize each product
 
-**❓ Why did we use HASONEVALUE()?**
+**❓ Why did we use SELECTEDVALUE() with ISBLANK()?**
 
-You may have noticed we wrapped our IF logic with `HASONEVALUE(Products[ProductName])`. This prevents an issue you would otherwise see: **a blank row at the top of your table**.
+You may notice we use `SELECTEDVALUE(Products[ProductName])` and check if it's not blank. This prevents an issue: **a blank row appearing at the top of your table**.
 
 **What causes the blank row?**
 - When you create a dedicated **_Measures** table, it exists as a table with one row in your model
-- When you add measures from _Measures to a table visual alongside ProductName, Power BI tries to show both:
-  - The products from the Products table
+- When you add measures from _Measures to a table visual alongside ProductName, Power BI creates a row for:
+  - Each product from the Products table
   - The single row from the _Measures table (which has no ProductName, hence blank)
-- Without `HASONEVALUE()`, this blank row would show values like "High Sales" and "Excellent" based on the grand total
+- Without our check, this blank row would show values like "High Sales" and "Excellent"
 
-**How HASONEVALUE() fixes this:**
-- `HASONEVALUE(Products[ProductName])` returns TRUE only when there's exactly one specific product in the filter context
+**How our solution fixes this:**
+- `SELECTEDVALUE(Products[ProductName])` returns the product name if there's exactly one in context, otherwise BLANK()
+- `NOT(ISBLANK(...))` checks if we actually have a product value
 - For actual product rows: Returns TRUE → shows the category/rating
-- For the blank row (no specific product): Returns FALSE → returns BLANK() and the row disappears or shows empty
+- For the blank row: Returns FALSE → returns BLANK() and the row shows empty
 - For the Total row at the bottom: Also returns FALSE → returns BLANK() (which is correct for totals)
 
-**Alternative solution:**
-If you didn't use `HASONEVALUE()`, you could instead:
-1. Right-click the table visual
-2. Select **Filters**
-3. Drag **ProductName** to the filters pane
-4. Select **"is not blank"**
+**Alternative solution - Filter the Visual:**
+If you still see a blank row, you can filter it out at the visual level:
+1. Select your table visual
+2. In the **Filters** pane (View → Filters if not visible)
+3. Drag **ProductName** to the **Filters on this visual** area
+4. Under "Filter type", select **Basic filtering**
+5. Uncheck **(Blank)** to remove blank rows
 
-However, using `HASONEVALUE()` is the **best practice** as it makes your measure more robust and self-contained.
+**Best practice tip:**
+Another approach is to **hide the _Measures table** from the report view entirely:
+1. Go to Data view
+2. Right-click the **_Measures** table
+3. Select **Hide in report view**
+
+This prevents users from accidentally using the table itself while still allowing them to use all the measures stored in it.
 
 **Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
 
@@ -428,8 +445,10 @@ The SWITCH function is cleaner and more readable than nested IF statements, espe
 
 ```dax
 Performance Rating (SWITCH) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
 IF(
-    HASONEVALUE(Products[ProductName]),
+    NOT(ISBLANK(SelectedProduct)),
     SWITCH(
         TRUE(),
         [Total Sales] >= 2000, "Excellent",
@@ -442,7 +461,7 @@ IF(
 ```
 
 **How it works:**
-- First checks `HASONEVALUE()` to ensure we have a specific product in context
+- First checks if we have a specific product using `SELECTEDVALUE()` and `ISBLANK()`
 - `SWITCH(TRUE(), ...)` evaluates each condition in order
 - Returns the value associated with the first TRUE condition
 - The last value ("Poor") is the default if nothing else matches
