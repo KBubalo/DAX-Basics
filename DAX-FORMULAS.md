@@ -87,7 +87,17 @@ Transaction Count = COUNTROWS(Sales)
 
 ## Conditional Logic - IF Statements
 
-### Simple IF
+### Simple IF (Initial Version - Creates Blank Row Issue)
+```dax
+Sales Category (Simple) = 
+IF(
+    [Total Sales] >= 500,
+    "High Sales",
+    "Low Sales"
+)
+```
+
+### Simple IF (Corrected Version - Prevents Blank Row)
 ```dax
 Sales Category (Simple) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
@@ -102,7 +112,29 @@ IF(
 )
 ```
 
-### Complex Nested IF (5 Conditions)
+### Complex Nested IF (Initial Version - Creates Blank Row Issue)
+```dax
+Performance Rating (IF) = 
+IF(
+    [Total Sales] >= 2000,
+    "Excellent",
+    IF(
+        [Total Sales] >= 1000,
+        "Good",
+        IF(
+            [Total Sales] >= 500,
+            "Average",
+            IF(
+                [Total Sales] >= 100,
+                "Below Average",
+                "Poor"
+            )
+        )
+    )
+)
+```
+
+### Complex Nested IF (Corrected Version - Prevents Blank Row)
 ```dax
 Performance Rating (IF) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])

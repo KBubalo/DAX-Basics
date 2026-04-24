@@ -320,6 +320,108 @@ Let's create a measure that categorizes sales as "High" or "Low". Make sure to s
 
 ```dax
 Sales Category (Simple) = 
+IF(
+    [Total Sales] >= 500,
+    "High Sales",
+    "Low Sales"
+)
+```
+
+**How it works:**
+- Evaluates if Total Sales is 500 or more
+- Returns "High Sales" if TRUE
+- Returns "Low Sales" if FALSE
+- Simple and straightforward conditional logic
+
+### Step 6.2: Complex IF Statement - Performance Rating
+
+Now let's create a more detailed categorization with 5 levels:
+
+```dax
+Performance Rating (IF) = 
+IF(
+    [Total Sales] >= 2000,
+    "Excellent",
+    IF(
+        [Total Sales] >= 1000,
+        "Good",
+        IF(
+            [Total Sales] >= 500,
+            "Average",
+            IF(
+                [Total Sales] >= 100,
+                "Below Average",
+                "Poor"
+            )
+        )
+    )
+)
+```
+
+**How it works:**
+- Checks conditions from highest to lowest
+- Returns the first matching category
+- Nested IF statements can get hard to read (we'll improve this with SWITCH!)
+
+### Step 6.3: Test Your IF Measures in a Visual
+
+Before moving on to SWITCH, let's verify that your IF measures work correctly.
+
+1. Go back to the **table visual** you created in Step 5.8
+2. Add these two new measures to your table:
+   - **Sales Category (Simple)**
+   - **Performance Rating (IF)**
+
+### Step 6.3: Test Your IF Measures in a Visual
+
+Let's see our measures in action! Add them to your table visual.
+
+1. Go back to the **table visual** you created in Step 5.8
+2. Add these two new measures to your table:
+   - **Sales Category (Simple)**
+   - **Performance Rating (IF)**
+
+**What you should see:**
+- Each product has a sales category (either "High Sales" or "Low Sales")
+- Each product has a performance rating (Excellent, Good, Average, Below Average, or Poor)
+- **But wait... there's a blank row at the top showing "Low Sales" and "Poor"!** 🤔
+
+**Understanding the results:**
+- Products with Total Sales ≥ 500 are marked as "High Sales"
+- Products with Total Sales < 500 are marked as "Low Sales"
+- The Performance Rating uses 5 different thresholds to categorize each product
+
+---
+
+### Step 6.4: ❓ Understanding the Blank Row Problem
+
+You've probably noticed an unexpected **blank row** at the top of your table that shows "Low Sales" and "Poor". Let's understand why this happens and how to fix it.
+
+**What causes the blank row?**
+- When you created the dedicated **_Measures** table using `_Measures = {1}`, it created a table with one row in your model
+- When you add measures from _Measures to a table visual alongside ProductName, Power BI shows:
+  - Each product from the Products table (normal rows)
+  - The single row from the _Measures table (which has no ProductName, hence blank)
+- Since the blank row has no ProductName, [Total Sales] evaluates across all data, but our IF still runs and returns values
+
+**Why does the blank row show "Low Sales" and "Poor"?**
+- The blank row represents the _Measures table row
+- It evaluates [Total Sales] which could be any value
+- Our IF conditions still execute and return text values
+- This creates clutter and confusion in our visual
+
+**How do we fix this?**
+We need to modify our measures to only return values when there's an actual product in the filter context. We'll use `SELECTEDVALUE()` and check for blanks.
+
+---
+
+### Step 6.5: Fix the Blank Row Issue
+
+Let's update both measures to handle this properly. **Modify your existing measures** with the improved versions below:
+
+**Updated Sales Category measure:**
+```dax
+Sales Category (Simple) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
 RETURN
 IF(
@@ -332,21 +434,7 @@ IF(
 )
 ```
 
-**How it works:**
-- `VAR` creates a variable to store the selected product name (makes the code cleaner and more efficient)
-- `SELECTEDVALUE()` gets the product name if there's exactly one in the filter context, otherwise returns BLANK()
-- `NOT(ISBLANK(...))` checks if we actually have a product (not a blank row)
-- If TRUE (we have a specific product), evaluate the sales category
-- If FALSE (blank row from _Measures table), return BLANK()
-- Then evaluates if Total Sales is 500 or more
-- Returns "High Sales" if TRUE, "Low Sales" if FALSE
-
-**New concept - VAR:** We're introducing variables here using `VAR`. Variables store intermediate calculations and make your DAX more readable and performant. The pattern is: `VAR VariableName = Expression` followed by `RETURN` for the final result.
-
-### Step 6.2: Complex IF Statement - Performance Rating
-
-Now let's create a more detailed categorization with 5 levels:
-
+**Updated Performance Rating measure:**
 ```dax
 Performance Rating (IF) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
@@ -373,60 +461,32 @@ IF(
 )
 ```
 
-**How it works:**
-- Uses `SELECTEDVALUE()` to get the product name and stores it in a variable
-- `NOT(ISBLANK(...))` checks if we have an actual product value (not blank)
-- If yes, checks conditions from highest to lowest
-- Returns the first matching category
-- If no product (blank row from _Measures table), returns BLANK()
-- Nested IF statements can get hard to read (we'll improve this with SWITCH!)
-
-### Step 6.3: Test Your IF Measures in a Visual
-
-Before moving on to SWITCH, let's verify that your IF measures work correctly.
-
-1. Go back to the **table visual** you created in Step 5.8
-2. Add these two new measures to your table:
-   - **Sales Category (Simple)**
-   - **Performance Rating (IF)**
-
-**What you should see:**
-- Each product now has a sales category (either "High Sales" or "Low Sales")
-- Each product has a performance rating (Excellent, Good, Average, Below Average, or Poor)
-
-**Understanding the results:**
-- Products with Total Sales ≥ 500 are marked as "High Sales"
-- Products with Total Sales < 500 are marked as "Low Sales"
-- The Performance Rating uses 5 different thresholds to categorize each product
-
-**❓ Why did we use SELECTEDVALUE() with ISBLANK()?**
-
-You may notice we use `SELECTEDVALUE(Products[ProductName])` and check if it's not blank. This prevents an issue: **a blank row appearing at the top of your table**.
-
-**What causes the blank row?**
-- When you create a dedicated **_Measures** table, it exists as a table with one row in your model
-- When you add measures from _Measures to a table visual alongside ProductName, Power BI creates a row for:
-  - Each product from the Products table
-  - The single row from the _Measures table (which has no ProductName, hence blank)
-- Without our check, this blank row would show values like "High Sales" and "Excellent"
-
-**How our solution fixes this:**
-- `SELECTEDVALUE(Products[ProductName])` returns the product name if there's exactly one in context, otherwise BLANK()
-- `NOT(ISBLANK(...))` checks if we actually have a product value
-- For actual product rows: Returns TRUE → shows the category/rating
+**How the fix works:**
+- `VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])` - Creates a variable and gets the product name if there's exactly one in context, otherwise returns BLANK()
+- `NOT(ISBLANK(SelectedProduct))` - Checks if we actually have a product value (not blank)
+- For actual product rows: Returns TRUE → evaluates and shows the category/rating
 - For the blank row: Returns FALSE → returns BLANK() and the row shows empty
 - For the Total row at the bottom: Also returns FALSE → returns BLANK() (which is correct for totals)
 
-**Alternative solution - Filter the Visual:**
-If you still see a blank row, you can filter it out at the visual level:
+**New concept - VAR (Variables):**
+We're introducing variables here using `VAR`. Variables:
+- Store intermediate calculations
+- Make your DAX more readable and easier to maintain
+- Improve performance (the value is calculated once, not multiple times)
+- Pattern: `VAR VariableName = Expression` followed by `RETURN` for the final result
+
+**After updating the measures, check your table visual again** - the blank row should now show empty values for these text measures!
+
+**Alternative solutions if you still see the blank row:**
+
+**Option 1 - Filter the Visual:**
 1. Select your table visual
 2. In the **Filters** pane (View → Filters if not visible)
 3. Drag **ProductName** to the **Filters on this visual** area
 4. Under "Filter type", select **Basic filtering**
 5. Uncheck **(Blank)** to remove blank rows
 
-**Best practice tip:**
-Another approach is to **hide the _Measures table** from the report view entirely:
+**Option 2 - Hide the _Measures Table (Best Practice):**
 1. Go to Data view
 2. Right-click the **_Measures** table
 3. Select **Hide in report view**
@@ -442,6 +502,8 @@ This prevents users from accidentally using the table itself while still allowin
 The SWITCH function is cleaner and more readable than nested IF statements, especially with multiple conditions.
 
 ### Step 7.1: Performance Rating with SWITCH
+
+Now let's rewrite the Performance Rating using SWITCH, which is much cleaner. Make sure to include the same blank-checking logic we learned in Step 6.5.
 
 ```dax
 Performance Rating (SWITCH) = 
@@ -461,7 +523,7 @@ IF(
 ```
 
 **How it works:**
-- First checks if we have a specific product using `SELECTEDVALUE()` and `ISBLANK()`
+- Uses the same `SELECTEDVALUE()` and blank-checking pattern from Step 6.5
 - `SWITCH(TRUE(), ...)` evaluates each condition in order
 - Returns the value associated with the first TRUE condition
 - The last value ("Poor") is the default if nothing else matches
