@@ -26,7 +26,7 @@ This lab provides a simplified, focused introduction to DAX fundamentals. It's d
 
 ### Lab Duration
 
-60-90 minutes
+45-60 minutes
 
 ---
 
