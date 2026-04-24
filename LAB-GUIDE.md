@@ -365,15 +365,6 @@ IF(
 
 ### Step 6.3: Test Your IF Measures in a Visual
 
-Before moving on to SWITCH, let's verify that your IF measures work correctly.
-
-1. Go back to the **table visual** you created in Step 5.8
-2. Add these two new measures to your table:
-   - **Sales Category (Simple)**
-   - **Performance Rating (IF)**
-
-### Step 6.3: Test Your IF Measures in a Visual
-
 Let's see our measures in action! Add them to your table visual.
 
 1. Go back to the **table visual** you created in Step 5.8
@@ -386,11 +377,6 @@ Let's see our measures in action! Add them to your table visual.
 - Each product has a performance rating (Excellent, Good, Average, Below Average, or Poor)
 - **But wait... there's a blank row at the top showing "Low Sales" and "Poor"!** 🤔
 
-**Understanding the results:**
-- Products with Total Sales ≥ 500 are marked as "High Sales"
-- Products with Total Sales < 500 are marked as "Low Sales"
-- The Performance Rating uses 5 different thresholds to categorize each product
-
 ---
 
 ### Step 6.4: ❓ Understanding the Blank Row Problem
@@ -398,20 +384,38 @@ Let's see our measures in action! Add them to your table visual.
 You've probably noticed an unexpected **blank row** at the top of your table that shows "Low Sales" and "Poor". Let's understand why this happens and how to fix it.
 
 **What causes the blank row?**
-- When you created the dedicated **_Measures** table using `_Measures = {1}`, it created a table with one row in your model
-- When you add measures from _Measures to a table visual alongside ProductName, Power BI shows:
-  - Each product from the Products table (normal rows)
-  - The single row from the _Measures table (which has no ProductName, hence blank)
-- Since the blank row has no ProductName, [Total Sales] evaluates across all data, but our IF still runs and returns values
+
+Remember when you created the **_Measures** table? Let's trace what happened:
+
+1. You created the table with `_Measures = {1}` → This created a table with **1 row** and **1 column** (named "Value" containing the number 1)
+2. You deleted the "Value" column → The column is gone, BUT **the table itself still exists with 1 row**
+3. Think of it like this: The _Measures table is like an empty box that still has one slot (row) in it, even though there's nothing visible inside
+
+**Why is this a problem in your visual?**
+
+When you add ProductName to a table visual alongside measures from the _Measures table, Power BI tries to combine and display data from both tables:
+
+- **Products table rows**: 5 products (4K Monitor, Keyboard, Laptop Pro 15, USB Cable, Wireless Mouse)
+- **_Measures table row**: 1 empty row (with no ProductName value → appears as blank)
+
+This creates a **blank row** in your table because the _Measures table contributes one row that has no ProductName associated with it.
 
 **Why does the blank row show "Low Sales" and "Poor"?**
-- The blank row represents the _Measures table row
-- It evaluates [Total Sales] which could be any value
-- Our IF conditions still execute and return text values
-- This creates clutter and confusion in our visual
+
+- For the blank row, there's no specific product in the filter context
+- [Total Sales] calculates across **all products combined** (grand total = 39,933.38)
+- Your IF measures still execute:
+  - `Sales Category (Simple)`: 39,933.38 ≥ 500? → Yes → Returns "High Sales"
+  - Wait, you're seeing "Low Sales"? That's because the measure evaluates in an unexpected way
+- Regardless, the blank row shows values it shouldn't, creating confusion
+
+**The root cause:**
+
+The _Measures table is a **real table in your data model** with **one physical row**, even though it has no visible columns. This row causes the blank row issue in your visuals.
 
 **How do we fix this?**
-We need to modify our measures to only return values when there's an actual product in the filter context. We'll use `SELECTEDVALUE()` and check for blanks.
+
+We need to modify our measures to only return values when there's an **actual product** in the filter context. We'll use `SELECTEDVALUE()` to check if there's a real ProductName value, and return BLANK() if not.
 
 ---
 
