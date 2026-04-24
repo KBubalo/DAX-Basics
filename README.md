@@ -60,6 +60,9 @@ DAX-Basics/
 │   ├── Products.csv          # Dimension table with product information
 │   └── Customers.csv         # Dimension table with customer information
 │
+├── solution/                  # Completed Power BI solution file
+│   └── DAX Basics Solution File.pbip
+│
 ├── LAB-GUIDE.md              # Complete step-by-step lab instructions
 ├── DAX-FORMULAS.md           # Quick reference for all DAX formulas
 └── README.md                 # This file
