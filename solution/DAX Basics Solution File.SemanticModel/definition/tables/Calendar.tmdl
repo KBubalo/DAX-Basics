@@ -15,7 +15,7 @@ table Calendar
 	column Year = YEAR(Calendar[Date])
 		formatString: 0
 		lineageTag: 747b3aee-d1e8-4133-84c1-a391a0d7fd47
-		summarizeBy: sum
+		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
 
@@ -28,7 +28,7 @@ table Calendar
 	column MonthNumber = MONTH(Calendar[Date])
 		formatString: 0
 		lineageTag: 6f256786-037e-46bc-ac0e-f0fc16f00f15
-		summarizeBy: sum
+		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
 

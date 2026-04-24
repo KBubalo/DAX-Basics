@@ -95,7 +95,7 @@ Calendar = CALENDARAUTO()
 >
 > **Better approach - Use CALENDAR function:**
 > ```dax
-> Calendar = CALENDAR(DATE(2024,1,1), DATE(2024,12,31))
+> Calendar = CALENDAR(DATE(2023,1,1), DATE(2025,12,31))
 > ```
 > This gives you explicit control over the date range.
 >
@@ -200,8 +200,25 @@ Click the **Model view** icon on the left sidebar.
 
 1. Drag **SaleDate** from the **Sales** table
 2. Drop it onto **Date** in the **Calendar** table
-3. Verify the relationship is **One-to-Many** (1:*)
+3. **⚠️ CRITICAL:** Verify the relationship settings are correct:
+   - **Cardinality:** One-to-Many (1:*) with **1** on the Calendar side
+   - **Cross filter direction:** Single (not Both)
 4. Click OK
+
+> **⚠️ IMPORTANT - Common Mistake:**
+> 
+> If you accidentally create this relationship with **One-to-One (1:1)** cardinality or **Both** filter direction, you will see **blank rows** appearing in your table visuals later in the lab (Parts 6-7). 
+> 
+> **Why One-to-Many is correct:**
+> - One date in the Calendar table can appear in many sales transactions
+> - Each sale occurs on exactly one date
+> - This is the proper star schema design
+> 
+> **Why Single filter direction:**
+> - Filters should flow from Calendar (dimension) to Sales (fact)
+> - Bidirectional filtering can cause unexpected results and performance issues
+> 
+> If you see blank rows later, come back and check this relationship first!
 
 Your data model is now complete! You should see a **star schema** with Sales (fact table) at the center, connected to three dimension tables. You can now switch back to the **Report view**.
 
@@ -316,7 +333,7 @@ This shows sales performance by country instead of by product.
 
 ### Step 6.1: Simple IF Statement - Sales Category
 
-Let's create a measure that categorizes sales as "High" or "Low". Make sure to select your **_Measure** table before creating this new measure so that it is stored in the same dedicated location as your other measures.
+Let's create a measure that categorizes sales as "High" or "Low". Make sure to select your **_Measures** table before creating this new measure so that it is stored in the same dedicated location as your other measures.
 
 ```dax
 Sales Category (Simple) = 
@@ -375,52 +392,42 @@ Let's see our measures in action! Add them to your table visual.
 **What you should see:**
 - Each product has a sales category (either "High Sales" or "Low Sales")
 - Each product has a performance rating (Excellent, Good, Average, Below Average, or Poor)
-- **But wait... there's a blank row at the top showing "Low Sales" and "Poor"!** 🤔
+- Clean data with NO blank rows (if your relationships are set up correctly!)
+
+**🛠️ TROUBLESHOOTING: If You See a Blank Row**
+
+If you see an unexpected **blank row** at the top showing "Low Sales" and "Poor", this is almost always caused by an **incorrect relationship** between the Calendar and Sales tables.
 
 ---
 
-### Step 6.4: ❓ Understanding the Blank Row Problem
+### Step 6.4: 🛠️ Troubleshooting Blank Rows IF ANY
 
-You've probably noticed an unexpected **blank row** at the top of your table that shows "Low Sales" and "Poor". Let's understand why this happens and how to fix it.
+**If you see blank rows with unexpected values in your table visual, follow these steps:**
 
-**What causes the blank row?**
+#### **Solution 1: Fix the Calendar-Sales Relationship (Most Common Cause)**
 
-The blank row appears because of how **table visuals display data** when you mix dimension attributes with measures. Here's what's happening:
+The blank row issue is typically caused by an incorrect relationship configuration.
 
-When you add **ProductName** (a column from the Products table) to a table visual:
-- Power BI creates one row for each distinct ProductName value
-- It also creates rows for any **"missing" or unmatched data**
+**Check your relationship:**
+1. Go to **Model view**
+2. Click on the relationship line between **Calendar** and **Sales** tables
+3. Verify the settings:
+   - **Cardinality:** Must be **One-to-Many (1:*)** with **1** on the Calendar side
+   - **Cross filter direction:** Must be **Single** (not Both)
 
-**Why would there be unmatched data?**
+**If your relationship shows 1:1 or Both:**
+1. Delete the incorrect relationship
+2. Recreate it following Step 4.4 instructions
+3. Go back to Report view - the blank row should be gone!
 
-This typically happens when:
-1. **Power BI includes a row for calculations that don't tie to a specific product**
-2. The table visual automatically tries to show aggregations at multiple levels
-3. Your measures evaluate even when there's no specific ProductName in context
+**Why this causes blanks:**
+- One-to-One cardinality creates filter context issues
+- Bidirectional filtering allows filters to flow the wrong way
+- This creates scenarios where ProductName has no value but measures still evaluate
 
-Think of it like this: The visual is trying to show "everything" - including a row that represents "no specific product" or an aggregation level.
+#### **Solution 2: Add Defensive Checks to Your Measures (Alternative Approach)**
 
-**Why does the blank row show "Low Sales" and "Poor"?**
-
-- For the blank row, there's **no specific product** in the filter context and therefore it returns BLANK()
-- Without a protective check, the IF measures will execute:
-  - They evaluate `[Total Sales]` in this blank context
-  - Return classification values like "Low Sales" or "Poor"
-- This creates a confusing blank row with unexpected values
-
-**The root cause:**
-
-Table visuals in Power BI can create rows for contexts where your dimension attribute (ProductName) has no value, but your measures still evaluate and return results. This is by design - Power BI wants to show all data perspectives.
-
-**How do we fix this?**
-
-We need to modify our measures to only return values when there's an **actual product** in the filter context. We'll use `SELECTEDVALUE()` to check if there's a real ProductName value, and return BLANK() if not. This way, the blank row will show nothing for these measures.
-
----
-
-### Step 6.5: Fix the Blank Row Issue
-
-Let's update both measures to handle this properly. **Modify your existing measures** with the improved versions below:
+If you want to keep your relationship as-is or add extra protection, you can modify your measures to check for valid values:
 
 **Updated Sales Category measure:**
 ```dax
@@ -464,21 +471,30 @@ IF(
 )
 ```
 
-**How the fix works:**
-- `VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])` - Creates a variable and gets the product name if there's exactly one in context, otherwise returns BLANK()
-- `NOT(ISBLANK(SelectedProduct))` - Checks if we actually have a product value (not blank)
-- For actual product rows: Returns TRUE → evaluates and shows the category/rating
-- For the blank row: Returns FALSE → returns BLANK() and the row shows empty
-- For the Total row at the bottom: Also returns FALSE → returns BLANK() (which is correct for totals)
+**How this works:**
+- `VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])` - Gets the product name if exactly one is in context, otherwise returns BLANK()
+- `NOT(ISBLANK(SelectedProduct))` - Checks if we have a valid product
+- Only evaluates the IF logic when there's an actual product
+- Returns BLANK() for invalid contexts
 
 **New concept - VAR (Variables):**
-We're introducing variables here using `VAR`. Variables:
+`VAR` creates variables in DAX:
 - Store intermediate calculations
-- Make your DAX more readable and easier to maintain
-- Improve performance (the value is calculated once, not multiple times)
-- Pattern: `VAR VariableName = Expression` followed by `RETURN` for the final result
+- Improve readability and maintainability
+- Better performance (calculated once, not repeatedly)
+- Pattern: `VAR VariableName = Expression` followed by `RETURN`
 
-**After updating the measures, check your table visual again** - the blank row should now show empty values for these text measures!
+**⚠️ Important Note:**
+While this defensive approach works, **fixing the relationship is the better solution**. The defensive checks are useful in complex scenarios, but for this lab, correct relationships should eliminate the issue entirely.
+
+---
+
+### Step 6.5: Moving Forward
+
+**For this lab, we recommend:**
+- Keep your measures simple (without SELECTEDVALUE checks)
+- Ensure your relationships are configured correctly
+- This follows best practices for star schema design
 
 **Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
 
@@ -490,33 +506,29 @@ The SWITCH function is cleaner and more readable than nested IF statements, espe
 
 ### Step 7.1: Performance Rating with SWITCH
 
-Now let's rewrite the Performance Rating using SWITCH, which is much cleaner. Make sure to include the same blank-checking logic we learned in Step 6.5. Add following measure to your **Measures** table:
+Now let's rewrite the Performance Rating using SWITCH, which is much cleaner. Add following measure to your **_Measures** table:
 
 ```dax
 Performance Rating (SWITCH) = 
-VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedProduct)),
-    SWITCH(
-        TRUE(),
-        [Total Sales] >= 2000, "Excellent",
-        [Total Sales] >= 1000, "Good",
-        [Total Sales] >= 500, "Average",
-        [Total Sales] >= 100, "Below Average",
-        "Poor"
-    )
+SWITCH(
+    TRUE(),
+    [Total Sales] >= 2000, "Excellent",
+    [Total Sales] >= 1000, "Good",
+    [Total Sales] >= 500, "Average",
+    [Total Sales] >= 100, "Below Average",
+    "Poor"
 )
 ```
 
 **How it works:**
-- Uses the same `SELECTEDVALUE()` and blank-checking pattern from Step 6.5
 - `SWITCH(TRUE(), ...)` evaluates each condition in order
 - Returns the value associated with the first TRUE condition
 - The last value ("Poor") is the default if nothing else matches
 - Much cleaner and easier to maintain than nested IFs!
 
 **Compare:** Look at both measures side by side. They produce identical results, but SWITCH is far more readable.
+
+**Note:** If you added the defensive `SELECTEDVALUE` checks in Step 6.4 (Solution 2), you can apply the same pattern here if needed. However, with correct relationships, the simple version above works perfectly!
 
 ### Step 7.2: Visualize and Compare Your Conditional Measures
 
@@ -568,19 +580,13 @@ Let's create a measure that shows total sales across ALL customers, regardless o
 
 ```dax
 Total Sales All Customers = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    CALCULATE(
-        [Total Sales],
-        ALL(Customers)
-    )
+CALCULATE(
+    [Total Sales],
+    ALL(Customers)
 )
 ```
 
 **What it does:**
-- Checks if we have a specific customer selected (using the pattern from Part 6)
 - Takes the [Total Sales] measure
 - Removes any filters on the Customers table
 - Calculates total sales as if no customer filter exists
@@ -611,7 +617,6 @@ DIVIDE(
 ```
 
 **How it works:**
-- Checks if we have a specific customer selected
 - Divides the filtered Total Sales (e.g., for one customer)
 - By the Total Sales across all customers
 - The third parameter (0) handles division by zero

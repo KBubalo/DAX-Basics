@@ -13,7 +13,7 @@ Calendar = CALENDARAUTO()
 
 ### Alternative (Best Practice)
 ```dax
-Calendar = CALENDAR(DATE(2024,1,1), DATE(2024,12,31))
+Calendar = CALENDAR(DATE(2023,1,1), DATE(2025,12,31))
 ```
 
 ---
@@ -87,7 +87,7 @@ Transaction Count = COUNTROWS(Sales)
 
 ## Conditional Logic - IF Statements
 
-### Simple IF (Initial Version - Creates Blank Row Issue)
+### Simple IF
 ```dax
 Sales Category (Simple) = 
 IF(
@@ -97,22 +97,7 @@ IF(
 )
 ```
 
-### Simple IF (Corrected Version - Prevents Blank Row)
-```dax
-Sales Category (Simple) = 
-VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedProduct)),
-    IF(
-        [Total Sales] >= 500,
-        "High Sales",
-        "Low Sales"
-    )
-)
-```
-
-### Complex Nested IF (Initial Version - Creates Blank Row Issue)
+### Complex Nested IF
 ```dax
 Performance Rating (IF) = 
 IF(
@@ -134,7 +119,26 @@ IF(
 )
 ```
 
-### Complex Nested IF (Corrected Version - Prevents Blank Row)
+### Optional: Defensive Version (If You See Blank Rows)
+
+If your Calendar-Sales relationship is incorrect (1:1 or Both filter direction), use these versions with protective checks:
+
+**Sales Category with SELECTEDVALUE:**
+```dax
+Sales Category (Simple) = 
+VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+RETURN
+IF(
+    NOT(ISBLANK(SelectedProduct)),
+    IF(
+        [Total Sales] >= 500,
+        "High Sales",
+        "Low Sales"
+    )
+)
+```
+
+**Performance Rating with SELECTEDVALUE:**
 ```dax
 Performance Rating (IF) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
@@ -161,11 +165,26 @@ IF(
 )
 ```
 
+> **Note:** Fix your relationship instead of using these defensive versions. See LAB-GUIDE Step 4.4 and Step 6.4 for details.
+
 ---
 
 ## SWITCH Function (Better Alternative)
 
 ### Performance Rating with SWITCH
+```dax
+Performance Rating (SWITCH) = 
+SWITCH(
+    TRUE(),
+    [Total Sales] >= 2000, "Excellent",
+    [Total Sales] >= 1000, "Good",
+    [Total Sales] >= 500, "Average",
+    [Total Sales] >= 100, "Below Average",
+    "Poor"
+)
+```
+
+### Optional: SWITCH with Defensive Checks (If You See Blank Rows)
 ```dax
 Performance Rating (SWITCH) = 
 VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
@@ -183,6 +202,8 @@ IF(
 )
 ```
 
+> **Note:** Fix your Calendar-Sales relationship instead (see Step 6.4).
+
 ---
 
 ## CALCULATE Function - Filter Context
@@ -190,14 +211,9 @@ IF(
 ### Total Sales Ignoring Customer Filters
 ```dax
 Total Sales All Customers = 
-VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
-RETURN
-IF(
-    NOT(ISBLANK(SelectedCustomer)),
-    CALCULATE(
-        [Total Sales],
-        ALL(Customers)
-    )
+CALCULATE(
+    [Total Sales],
+    ALL(Customers)
 )
 ```
 
@@ -278,17 +294,22 @@ DIVIDE(
 
 ## Common Mistakes to Avoid
 
-1. ❌ Not using fully qualified references: `SUM(SalesAmount)` 
+1. ❌ **Incorrect Calendar-Sales relationship** (1:1 or Both filter direction)
+   ✅ Must be **One-to-Many (1:*)** with **Single** direction
+   **Symptom:** Blank rows appearing in table visuals with unexpected values
+   **Fix:** Delete and recreate relationship following Step 4.4 in LAB-GUIDE.md
+
+2. ❌ Not using fully qualified references: `SUM(SalesAmount)` 
    ✅ Always use: `SUM(Sales[SalesAmount])`
 
-2. ❌ Creating calculated columns when you need measures
+3. ❌ Creating calculated columns when you need measures
    ✅ Use measures for aggregations that change with filters
 
-3. ❌ Using CALENDARAUTO in production
+4. ❌ Using CALENDARAUTO in production
    ✅ Use CALENDAR with explicit dates or create in Power Query
 
-4. ❌ Nested IFs for many conditions
+5. ❌ Nested IFs for many conditions
    ✅ Use SWITCH for better readability
 
-5. ❌ Forgetting to mark Calendar as Date Table
+6. ❌ Forgetting to mark Calendar as Date Table
    ✅ Required for time intelligence functions to work properly

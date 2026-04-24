@@ -7,8 +7,6 @@ relationship AutoDetected_3e4bcdf4-86e9-4def-97ee-bbd9d8f16f2f
 	toColumn: Customers.CustomerID
 
 relationship 29699fdc-5dd2-62bf-9dc1-22ade3e276f3
-	crossFilteringBehavior: bothDirections
-	fromCardinality: one
 	fromColumn: Sales.SaleDate
 	toColumn: Calendar.Date
 

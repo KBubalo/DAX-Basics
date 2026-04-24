@@ -75,7 +75,7 @@ DAX-Basics/
 The lab uses three simple CSV files representing an electronics retailer:
 
 ### Sales (Fact Table)
-- 76 transactions spanning 2024
+- 234 transactions spanning 2023-2025 (3 years)
 - Fields: SaleID, SaleDate, ProductID, CustomerID, Quantity, SalesAmount
 
 ### Products (Dimension Table)
