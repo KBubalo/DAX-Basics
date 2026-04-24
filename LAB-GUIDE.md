@@ -267,7 +267,7 @@ Transaction Count = COUNTROWS(Sales)
 
 **What it does:** Counts how many rows (transactions) are in the Sales table within the current filter context.
 
-Now, you can delete the **Value** column in our **_Measures** table since it was only needed to create the table and is no longer required.
+Now, you can hide the **Value** column in our **_Measures** table since it was only needed to create the table and is no longer required.
 
 ### Step 5.8: Visualize Your Measures
 
