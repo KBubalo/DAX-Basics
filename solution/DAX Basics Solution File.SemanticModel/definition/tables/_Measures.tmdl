@@ -1,0 +1,153 @@
+table _Measures
+	lineageTag: f07a661b-c3eb-4068-b06a-60e7ed60263f
+
+	measure 'Total Sales' = SUM(Sales[SalesAmount])
+		lineageTag: e0eb8ed8-aab4-4c44-b7cd-97802242c0d2
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Average Sales' = AVERAGE(Sales[SalesAmount])
+		lineageTag: 29b79817-ac1f-43ca-bb72-095128c21d4b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Max Sale' = MAX(Sales[SalesAmount])
+		lineageTag: 366d19e2-fd4b-42aa-98e0-62b381d558bc
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Min Sale' = MIN(Sales[SalesAmount])
+		lineageTag: a165b54d-6550-4f6e-a3c0-7fead4ddf380
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Quantity' = SUM(Sales[Quantity])
+		formatString: 0
+		lineageTag: c2d45b50-62ff-4030-babc-0d165578695f
+
+	measure 'Transaction Count' = COUNTROWS(Sales)
+		formatString: 0
+		lineageTag: 18b1616a-e031-4173-bdb5-7b61708510a1
+
+	measure 'Sales Category (Simple)' =
+			
+			VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+			RETURN
+			IF(
+			    NOT(ISBLANK(SelectedProduct)),
+			    IF(
+			        [Total Sales] >= 500,
+			        "High Sales",
+			        "Low Sales"
+			    )
+			)
+		lineageTag: 3023bdbc-d7a8-43a1-977f-51b2bb48f094
+
+	measure 'Performance Rating (IF)' =
+			
+			VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+			RETURN
+			IF(
+			    NOT(ISBLANK(SelectedProduct)),
+			    IF(
+			        [Total Sales] >= 2000,
+			        "Excellent",
+			        IF(
+			            [Total Sales] >= 1000,
+			            "Good",
+			            IF(
+			                [Total Sales] >= 500,
+			                "Average",
+			                IF(
+			                    [Total Sales] >= 100,
+			                    "Below Average",
+			                    "Poor"
+			                )
+			            )
+			        )
+			    )
+			)
+		lineageTag: c2084074-acfd-40e1-b126-9ab7b5b0d111
+
+	measure 'Performance Rating (SWITCH)' =
+			
+			VAR SelectedProduct = SELECTEDVALUE(Products[ProductName])
+			RETURN
+			IF(
+			    NOT(ISBLANK(SelectedProduct)),
+			    SWITCH(
+			        TRUE(),
+			        [Total Sales] >= 2000, "Excellent",
+			        [Total Sales] >= 1000, "Good",
+			        [Total Sales] >= 500, "Average",
+			        [Total Sales] >= 100, "Below Average",
+			        "Poor"
+			    )
+			)
+		lineageTag: f7c6f24e-cf85-45e3-af00-cf34ff89eadb
+
+	measure 'Total Sales All Customers' =
+			
+			VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
+			RETURN
+			IF(
+			    NOT(ISBLANK(SelectedCustomer)),
+			    CALCULATE(
+			        [Total Sales],
+			        ALL(Customers)
+			    )
+			)
+		lineageTag: 54d14886-9b31-477d-8410-91a3e52ee006
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Sales All Filters' =
+			
+			VAR SelectedCustomer = SELECTEDVALUE(Customers[CustomerName])
+			RETURN
+			IF(
+			    NOT(ISBLANK(SelectedCustomer)),
+			    CALCULATE(
+			        [Total Sales],
+			        ALL(Sales)
+			    )
+			)
+		lineageTag: 746718ed-7061-40e8-b8e3-77086a402347
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure '% of Total Sales' =
+			
+			DIVIDE(
+			    [Total Sales],
+			    [Total Sales All Customers],
+			    0
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: a404c058-60c5-4788-952f-a5384c56a550
+
+	measure 'Avg Unit Price' =
+			
+			AVERAGEX(
+			    Sales,
+			    RELATED(Products[UnitPrice])
+			)
+		lineageTag: 7ab8c0bd-d6a8-47a3-8910-c0c956943dc1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Value
+		formatString: 0
+		lineageTag: d77cce69-7124-40fe-a16c-57fc2ce93abf
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {1}
+
+	annotation PBI_Id = a827883ff94d4aa888eecec27b6fee5c
+

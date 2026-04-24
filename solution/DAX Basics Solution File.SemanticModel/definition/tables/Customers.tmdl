@@ -1,0 +1,56 @@
+table Customers
+	lineageTag: 7b8add95-0496-411c-bc6d-411aecfeabf4
+
+	column CustomerID
+		dataType: int64
+		formatString: 0
+		lineageTag: 9e03fa28-4802-4d34-b0bb-abb896e63916
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerName
+		dataType: string
+		lineageTag: 664ce47f-982c-47df-97f3-80786373c6ec
+		summarizeBy: none
+		sourceColumn: CustomerName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: aca9840b-d3c3-4fab-8852-967c4895199e
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		lineageTag: bfaf9082-46d1-41be-8a58-760d431103f9
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 40a96dc1-032b-4491-8857-de9581d6570e
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Customers = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\krbubalo\OneDrive - Microsoft\30 GitHub Repos\DAX Basics\data\Customers.csv"),[Delimiter=",", Columns=5, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"CustomerID", Int64.Type}, {"CustomerName", type text}, {"Country", type text}, {"City", type text}, {"Region", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

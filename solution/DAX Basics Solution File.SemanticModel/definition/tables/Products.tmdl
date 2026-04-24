@@ -1,0 +1,50 @@
+table Products
+	lineageTag: 7d77f64f-ee92-4b92-a7ff-38edffb79f19
+
+	column ProductID
+		dataType: int64
+		formatString: 0
+		lineageTag: d51c1368-80b5-4706-9d07-08251001dd3f
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductName
+		dataType: string
+		lineageTag: 4be6f3f3-d680-47bb-81fb-0b98bfc0f93d
+		summarizeBy: none
+		sourceColumn: ProductName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Category
+		dataType: string
+		lineageTag: 61ada582-d6d4-42bc-81dd-7dd54532aeeb
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnitPrice
+		dataType: double
+		lineageTag: 9c4041e1-7ef2-4007-8749-56f0ed73c21a
+		summarizeBy: none
+		sourceColumn: UnitPrice
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Products = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\krbubalo\OneDrive - Microsoft\30 GitHub Repos\DAX Basics\data\Products.csv"),[Delimiter=",", Columns=4, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"ProductID", Int64.Type}, {"ProductName", type text}, {"Category", type text}, {"UnitPrice", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

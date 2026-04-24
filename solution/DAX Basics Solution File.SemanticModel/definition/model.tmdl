@@ -1,0 +1,22 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-CH
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Sales","Products","Customers"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Sales
+ref table Products
+ref table Customers
+ref table Calendar
+ref table _Measures
+
+ref cultureInfo en-US
+

@@ -1,0 +1,72 @@
+table Sales
+	lineageTag: 36a3fce3-d204-4aeb-9dd6-21a3260d5d33
+
+	column SaleID
+		dataType: int64
+		formatString: 0
+		lineageTag: 480e9fbb-32ec-44e2-abd2-59ce88e17148
+		summarizeBy: count
+		sourceColumn: SaleID
+
+		annotation SummarizationSetBy = Automatic
+
+	column SaleDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 64124f6c-dae2-435c-96b1-a6d6d2b7b517
+		summarizeBy: none
+		sourceColumn: SaleDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ProductID
+		dataType: int64
+		formatString: 0
+		lineageTag: 340afc86-385c-456b-8fb0-c45d190d96a1
+		summarizeBy: none
+		sourceColumn: ProductID
+
+		annotation SummarizationSetBy = Automatic
+
+	column CustomerID
+		dataType: int64
+		formatString: 0
+		lineageTag: 1ef648f6-7a0f-40e8-a750-bfb6a3f597f4
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 675ded5f-0c0c-4b83-ba55-125d8b4f329e
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesAmount
+		dataType: double
+		lineageTag: 7ed1448d-18f3-472c-a757-891452e60c7b
+		summarizeBy: sum
+		sourceColumn: SalesAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Sales = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\krbubalo\OneDrive - Microsoft\30 GitHub Repos\DAX Basics\data\Sales.csv"),[Delimiter=",", Columns=6, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"SaleID", Int64.Type}, {"SaleDate", type date}, {"ProductID", Int64.Type}, {"CustomerID", Int64.Type}, {"Quantity", Int64.Type}, {"SalesAmount", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
