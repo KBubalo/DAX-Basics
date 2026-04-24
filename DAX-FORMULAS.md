@@ -91,9 +91,12 @@ Transaction Count = COUNTROWS(Sales)
 ```dax
 Sales Category (Simple) = 
 IF(
-    [Total Sales] >= 500,
-    "High Sales",
-    "Low Sales"
+    HASONEVALUE(Products[ProductName]),
+    IF(
+        [Total Sales] >= 500,
+        "High Sales",
+        "Low Sales"
+    )
 )
 ```
 
@@ -101,18 +104,21 @@ IF(
 ```dax
 Performance Rating (IF) = 
 IF(
-    [Total Sales] >= 2000,
-    "Excellent",
+    HASONEVALUE(Products[ProductName]),
     IF(
-        [Total Sales] >= 1000,
-        "Good",
+        [Total Sales] >= 2000,
+        "Excellent",
         IF(
-            [Total Sales] >= 500,
-            "Average",
+            [Total Sales] >= 1000,
+            "Good",
             IF(
-                [Total Sales] >= 100,
-                "Below Average",
-                "Poor"
+                [Total Sales] >= 500,
+                "Average",
+                IF(
+                    [Total Sales] >= 100,
+                    "Below Average",
+                    "Poor"
+                )
             )
         )
     )
@@ -126,13 +132,16 @@ IF(
 ### Performance Rating with SWITCH
 ```dax
 Performance Rating (SWITCH) = 
-SWITCH(
-    TRUE(),
-    [Total Sales] >= 2000, "Excellent",
-    [Total Sales] >= 1000, "Good",
-    [Total Sales] >= 500, "Average",
-    [Total Sales] >= 100, "Below Average",
-    "Poor"
+IF(
+    HASONEVALUE(Products[ProductName]),
+    SWITCH(
+        TRUE(),
+        [Total Sales] >= 2000, "Excellent",
+        [Total Sales] >= 1000, "Good",
+        [Total Sales] >= 500, "Average",
+        [Total Sales] >= 100, "Below Average",
+        "Poor"
+    )
 )
 ```
 

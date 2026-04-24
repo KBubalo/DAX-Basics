@@ -321,16 +321,21 @@ Let's create a measure that categorizes sales as "High" or "Low". Make sure to s
 ```dax
 Sales Category (Simple) = 
 IF(
-    [Total Sales] >= 500,
-    "High Sales",
-    "Low Sales"
+    HASONEVALUE(Products[ProductName]),
+    IF(
+        [Total Sales] >= 500,
+        "High Sales",
+        "Low Sales"
+    )
 )
 ```
 
 **How it works:**
-- Evaluates if Total Sales is 500 or more
-- Returns "High Sales" if TRUE
-- Returns "Low Sales" if FALSE
+- `HASONEVALUE()` checks if there's exactly one product in the current filter context
+- If TRUE (we're looking at a specific product), evaluate the sales category
+- If FALSE (no specific product or multiple products), return BLANK()
+- Then evaluates if Total Sales is 500 or more
+- Returns "High Sales" if TRUE, "Low Sales" if FALSE
 
 ### Step 6.2: Complex IF Statement - Performance Rating
 
@@ -339,18 +344,21 @@ Now let's create a more detailed categorization with 5 levels:
 ```dax
 Performance Rating (IF) = 
 IF(
-    [Total Sales] >= 2000,
-    "Excellent",
+    HASONEVALUE(Products[ProductName]),
     IF(
-        [Total Sales] >= 1000,
-        "Good",
+        [Total Sales] >= 2000,
+        "Excellent",
         IF(
-            [Total Sales] >= 500,
-            "Average",
+            [Total Sales] >= 1000,
+            "Good",
             IF(
-                [Total Sales] >= 100,
-                "Below Average",
-                "Poor"
+                [Total Sales] >= 500,
+                "Average",
+                IF(
+                    [Total Sales] >= 100,
+                    "Below Average",
+                    "Poor"
+                )
             )
         )
     )
@@ -358,8 +366,10 @@ IF(
 ```
 
 **How it works:**
-- Checks conditions from highest to lowest
+- First checks if there's a specific product in context using `HASONEVALUE()`
+- If yes, checks conditions from highest to lowest
 - Returns the first matching category
+- If no specific product (like the blank row from _Measures table), returns BLANK()
 - Nested IF statements can get hard to read (we'll improve this with SWITCH!)
 
 ### Step 6.3: Test Your IF Measures in a Visual
@@ -380,30 +390,31 @@ Before moving on to SWITCH, let's verify that your IF measures work correctly.
 - Products with Total Sales < 500 are marked as "Low Sales"
 - The Performance Rating uses 5 different thresholds to categorize each product
 
-**❓ Why is there a blank row in the Total?**
+**❓ Why did we use HASONEVALUE()?**
 
-You may notice that the **Total** row shows a blank value for your text-based measures (Sales Category and Performance Rating), while your numeric measures show totals correctly.
+You may have noticed we wrapped our IF logic with `HASONEVALUE(Products[ProductName])`. This prevents an issue you would otherwise see: **a blank row at the top of your table**.
 
-**This is normal behavior!** Here's why:
+**What causes the blank row?**
+- When you create a dedicated **_Measures** table, it exists as a table with one row in your model
+- When you add measures from _Measures to a table visual alongside ProductName, Power BI tries to show both:
+  - The products from the Products table
+  - The single row from the _Measures table (which has no ProductName, hence blank)
+- Without `HASONEVALUE()`, this blank row would show values like "High Sales" and "Excellent" based on the grand total
 
-- **Numeric measures** (like Total Sales, Average Sales) aggregate across all rows—they SUM, AVERAGE, etc.
-- **Text measures** (like Sales Category, Performance Rating) return different text values for different rows
-- At the Total level, Power BI evaluates the measure **across all products combined** (Total Sales = 39,933.38 in your case)
-- Since this total value meets the "Excellent" threshold (≥ 2000), the measure actually returns "Excellent"—but Power BI's default behavior is to show **(Blank)** in the Total row for text measures unless you explicitly configure it
+**How HASONEVALUE() fixes this:**
+- `HASONEVALUE(Products[ProductName])` returns TRUE only when there's exactly one specific product in the filter context
+- For actual product rows: Returns TRUE → shows the category/rating
+- For the blank row (no specific product): Returns FALSE → returns BLANK() and the row disappears or shows empty
+- For the Total row at the bottom: Also returns FALSE → returns BLANK() (which is correct for totals)
 
-**This is actually correct!** The blank indicates that these measures are row-level classifications, not overall aggregations. Each product has its own category/rating based on its individual sales.
+**Alternative solution:**
+If you didn't use `HASONEVALUE()`, you could instead:
+1. Right-click the table visual
+2. Select **Filters**
+3. Drag **ProductName** to the filters pane
+4. Select **"is not blank"**
 
-**Optional - Fix the blank (Advanced):**
-If you want to show a value in the Total row, you could modify your measure like this:
-```dax
-Sales Category (with Total) = 
-IF(
-    HASONEVALUE(Products[ProductName]),
-    IF([Total Sales] >= 500, "High Sales", "Low Sales"),
-    "Multiple Products"
-)
-```
-The `HASONEVALUE()` function checks if you're looking at a single product row (returns the category) or the total row (returns "Multiple Products"). However, for learning purposes, we'll keep the simpler version.
+However, using `HASONEVALUE()` is the **best practice** as it makes your measure more robust and self-contained.
 
 **Note the nested IF structure:** While it works, it's getting harder to read with 5 conditions. In the next section, we'll learn a better way to write this same logic using SWITCH!
 
@@ -417,17 +428,21 @@ The SWITCH function is cleaner and more readable than nested IF statements, espe
 
 ```dax
 Performance Rating (SWITCH) = 
-SWITCH(
-    TRUE(),
-    [Total Sales] >= 2000, "Excellent",
-    [Total Sales] >= 1000, "Good",
-    [Total Sales] >= 500, "Average",
-    [Total Sales] >= 100, "Below Average",
-    "Poor"
+IF(
+    HASONEVALUE(Products[ProductName]),
+    SWITCH(
+        TRUE(),
+        [Total Sales] >= 2000, "Excellent",
+        [Total Sales] >= 1000, "Good",
+        [Total Sales] >= 500, "Average",
+        [Total Sales] >= 100, "Below Average",
+        "Poor"
+    )
 )
 ```
 
 **How it works:**
+- First checks `HASONEVALUE()` to ensure we have a specific product in context
 - `SWITCH(TRUE(), ...)` evaluates each condition in order
 - Returns the value associated with the first TRUE condition
 - The last value ("Poor") is the default if nothing else matches
